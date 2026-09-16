@@ -32,20 +32,23 @@ enum InstallStatusAndroid {
   /// - 0: UNKNOWN
   /// - 1: PENDING
   /// - 2: DOWNLOADING
+  /// - 3: INSTALLING
+  /// - 4: INSTALLED
+  /// - 5: FAILED
+  /// - 6: CANCELED
   /// - 11: DOWNLOADED
-  /// - 5: INSTALLING
-  /// - 6: INSTALLED
-  /// - 7: FAILED
-  /// - 8: CANCELED
+  ///
+  /// 10 (REQUIRES_UI_INTENT) has no enum member and maps to [unknown], as does
+  /// any other unrecognised value.
   static InstallStatusAndroid fromPlayCoreValue(int value) {
     return switch (value) {
       1 => InstallStatusAndroid.pending,
       2 => InstallStatusAndroid.downloading,
+      3 => InstallStatusAndroid.installing,
+      4 => InstallStatusAndroid.installed,
+      5 => InstallStatusAndroid.failed,
+      6 => InstallStatusAndroid.canceled,
       11 => InstallStatusAndroid.downloaded,
-      5 => InstallStatusAndroid.installing,
-      6 => InstallStatusAndroid.installed,
-      7 => InstallStatusAndroid.failed,
-      8 => InstallStatusAndroid.canceled,
       _ => InstallStatusAndroid.unknown,
     };
   }
