@@ -21,8 +21,12 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
 
-class InAppUpdateFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
+class InAppUpdateFlutterPlugin internal constructor(
+    private val createAppUpdateManager: (Activity) -> AppUpdateManager,
+) : FlutterPlugin, MethodCallHandler, ActivityAware,
     EventChannel.StreamHandler, PluginRegistry.ActivityResultListener {
+
+    constructor() : this({ activity -> AppUpdateManagerFactory.create(activity) })
 
     private lateinit var methodChannel: MethodChannel
     private lateinit var eventChannel: EventChannel
@@ -60,7 +64,7 @@ class InAppUpdateFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware
         activity = binding.activity
         activityPluginBinding = binding
         binding.addActivityResultListener(this)
-        appUpdateManager = AppUpdateManagerFactory.create(binding.activity)
+        appUpdateManager = createAppUpdateManager(binding.activity)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -71,7 +75,7 @@ class InAppUpdateFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware
         activity = binding.activity
         activityPluginBinding = binding
         binding.addActivityResultListener(this)
-        appUpdateManager = AppUpdateManagerFactory.create(binding.activity)
+        appUpdateManager = createAppUpdateManager(binding.activity)
     }
 
     override fun onDetachedFromActivity() {
@@ -135,29 +139,9 @@ class InAppUpdateFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware
             if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
                 info.isUpdateTypeAllowed(updateType)
             ) {
-                val options = AppUpdateOptions.newBuilder(updateType)
-                    .setAllowAssetPackDeletion(allowAssetPackDeletion)
-                    .build()
-
-                val requestCode = if (updateType == AppUpdateType.IMMEDIATE) {
-                    REQUEST_CODE_IMMEDIATE
-                } else {
-                    REQUEST_CODE_FLEXIBLE
-                }
-
-                manager.startUpdateFlowForResult(info, currentActivity, options, requestCode)
+                startUpdateFlow(manager, info, currentActivity, updateType, allowAssetPackDeletion)
             } else if (info.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
-                val options = AppUpdateOptions.newBuilder(updateType)
-                    .setAllowAssetPackDeletion(allowAssetPackDeletion)
-                    .build()
-
-                val requestCode = if (updateType == AppUpdateType.IMMEDIATE) {
-                    REQUEST_CODE_IMMEDIATE
-                } else {
-                    REQUEST_CODE_FLEXIBLE
-                }
-
-                manager.startUpdateFlowForResult(info, currentActivity, options, requestCode)
+                startUpdateFlow(manager, info, currentActivity, updateType, allowAssetPackDeletion)
             } else {
                 pendingResult?.error(
                     "UPDATE_NOT_AVAILABLE",
@@ -168,6 +152,42 @@ class InAppUpdateFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware
             }
         }.addOnFailureListener { e ->
             pendingResult?.error("CHECK_UPDATE_FAILED", "Failed to check for updates", e.localizedMessage)
+            pendingResult = null
+        }
+    }
+
+    /**
+     * Starts the Play update flow. [pendingResult] is completed later in [onActivityResult], so it
+     * is failed here if the flow never starts: either Play Core returns false (for example when
+     * the update type is not allowed) or it throws while launching the update Activity.
+     */
+    private fun startUpdateFlow(
+        manager: AppUpdateManager,
+        info: AppUpdateInfo,
+        activity: Activity,
+        updateType: Int,
+        allowAssetPackDeletion: Boolean,
+    ) {
+        val options = AppUpdateOptions.newBuilder(updateType)
+            .setAllowAssetPackDeletion(allowAssetPackDeletion)
+            .build()
+
+        val requestCode = if (updateType == AppUpdateType.IMMEDIATE) {
+            REQUEST_CODE_IMMEDIATE
+        } else {
+            REQUEST_CODE_FLEXIBLE
+        }
+
+        val started = try {
+            manager.startUpdateFlowForResult(info, activity, options, requestCode)
+        } catch (e: Exception) {
+            pendingResult?.error("START_UPDATE_FAILED", "Failed to start the update flow", e.localizedMessage)
+            pendingResult = null
+            return
+        }
+
+        if (!started) {
+            pendingResult?.error("UPDATE_NOT_STARTED", "The update flow could not be started", null)
             pendingResult = null
         }
     }
