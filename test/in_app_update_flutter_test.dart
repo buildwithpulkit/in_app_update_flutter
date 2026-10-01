@@ -14,12 +14,6 @@ class _MockPlatform extends InAppUpdateFlutterPlatform {
   }
 
   @override
-  // ignore: deprecated_member_use_from_same_package
-  Future<void> showUpdate({required String appStoreId}) async {
-    lastAppStoreId = appStoreId;
-  }
-
-  @override
   Future<AppUpdateInfoAndroid> checkUpdateAndroid() async {
     return const AppUpdateInfoAndroid(
       updateAvailability: UpdateAvailabilityAndroid.updateAvailable,
@@ -92,14 +86,6 @@ void main() {
 
       setUp(() {
         platform = _UnimplementedPlatform();
-      });
-
-      test('showUpdate throws UnimplementedError', () {
-        expect(
-          // ignore: deprecated_member_use_from_same_package
-          () => platform.showUpdate(appStoreId: '123'),
-          throwsA(isA<UnimplementedError>()),
-        );
       });
 
       test('showUpdateForIos throws UnimplementedError', () {

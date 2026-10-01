@@ -12,20 +12,6 @@ export 'package:in_app_update_flutter/src/models/models.dart';
 /// In-App Updates API, then [startImmediateUpdateAndroid] or
 /// [startFlexibleUpdateAndroid] to start the update flow.
 class InAppUpdateFlutter {
-  /// Shows the platform-specific in-app update UI.
-  ///
-  /// [appStoreId] is the numeric App Store ID of your app
-  /// (found in your App Store Connect URL).
-  @Deprecated(
-    'Use showUpdateForIos() on iOS or checkUpdateAndroid() + '
-    'startImmediateUpdateAndroid()/startFlexibleUpdateAndroid() on Android',
-  )
-  Future<void> showUpdate({required String appStoreId}) {
-    // ignore: deprecated_member_use_from_same_package
-    return InAppUpdateFlutterPlatform.instance
-        .showUpdate(appStoreId: appStoreId);
-  }
-
   /// iOS: Shows the App Store product page overlay via StoreKit.
   ///
   /// [appStoreId] is the numeric App Store ID of your app

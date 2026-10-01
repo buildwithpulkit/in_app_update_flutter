@@ -61,21 +61,6 @@ void main() {
       });
     });
 
-    group('showUpdate (deprecated)', () {
-      test('calls showStoreUpdateIos method on the channel', () async {
-        String? invokedMethod;
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(methodChannel, (call) async {
-          invokedMethod = call.method;
-          return null;
-        });
-
-        // ignore: deprecated_member_use_from_same_package
-        await plugin.showUpdate(appStoreId: '544007664');
-        expect(invokedMethod, 'showStoreUpdateIos');
-      });
-    });
-
     group('checkUpdateAndroid', () {
       test('calls checkForUpdateAndroid and deserializes response', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
