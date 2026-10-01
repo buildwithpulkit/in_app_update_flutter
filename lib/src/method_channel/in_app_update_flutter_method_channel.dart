@@ -14,6 +14,20 @@ class MethodChannelInAppUpdateFlutter extends InAppUpdateFlutterPlatform {
     'in_app_update_flutter/installStateAndroid',
   );
 
+  /// The single stream shared by every listener of [installStateStreamAndroid].
+  ///
+  /// Each [EventChannel.receiveBroadcastStream] call creates a stream that
+  /// takes over the channel's message handler when listened to and clears it
+  /// when cancelled, so creating more than one would leave all but the newest
+  /// listener without events. Sharing one broadcast stream sends `listen` to
+  /// the platform for the first listener and `cancel` after the last one.
+  static final Stream<InstallStateAndroid> _installStateStream =
+      _eventChannel.receiveBroadcastStream().map((event) {
+    return InstallStateAndroid.fromMap(
+      Map<String, dynamic>.from(event as Map),
+    );
+  });
+
   @override
   @Deprecated(
     'Use showUpdateForIos() on iOS or checkUpdateAndroid() + '
@@ -68,11 +82,6 @@ class MethodChannelInAppUpdateFlutter extends InAppUpdateFlutterPlatform {
   }
 
   @override
-  Stream<InstallStateAndroid> get installStateStreamAndroid {
-    return _eventChannel.receiveBroadcastStream().map((event) {
-      return InstallStateAndroid.fromMap(
-        Map<String, dynamic>.from(event as Map),
-      );
-    });
-  }
+  Stream<InstallStateAndroid> get installStateStreamAndroid =>
+      _installStateStream;
 }

@@ -218,5 +218,148 @@ void main() {
         expect(invokedMethod, 'completeUpdateAndroid');
       });
     });
+
+    group('installStateStreamAndroid', () {
+      const eventChannel = EventChannel(
+        'in_app_update_flutter/installStateAndroid',
+      );
+
+      late int listenCount;
+      late int cancelCount;
+      MockStreamHandlerEventSink? sink;
+
+      setUp(() {
+        listenCount = 0;
+        cancelCount = 0;
+        sink = null;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockStreamHandler(
+          eventChannel,
+          MockStreamHandler.inline(
+            onListen: (arguments, events) {
+              listenCount++;
+              sink = events;
+            },
+            onCancel: (arguments) {
+              cancelCount++;
+              sink = null;
+            },
+          ),
+        );
+      });
+
+      tearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockStreamHandler(eventChannel, null);
+      });
+
+      Map<String, Object> installState(int status) => {
+            'status': status,
+            'bytesDownloaded': 50,
+            'totalBytesToDownload': 100,
+          };
+
+      test('returns the same stream on every access', () {
+        expect(
+          identical(
+            plugin.installStateStreamAndroid,
+            plugin.installStateStreamAndroid,
+          ),
+          isTrue,
+        );
+      });
+
+      test('deserializes install state events', () async {
+        final events = <InstallStateAndroid>[];
+        final subscription = plugin.installStateStreamAndroid.listen(
+          events.add,
+        );
+        await pumpEventQueue();
+
+        sink!.success(installState(2));
+        await pumpEventQueue();
+
+        expect(events.single.status, InstallStatusAndroid.downloading);
+        expect(events.single.bytesDownloaded, 50);
+        expect(events.single.totalBytesToDownload, 100);
+        await subscription.cancel();
+      });
+
+      test('delivers events to every listener with a single native listen',
+          () async {
+        final first = <InstallStateAndroid>[];
+        final second = <InstallStateAndroid>[];
+        final firstSubscription =
+            plugin.installStateStreamAndroid.listen(first.add);
+        final secondSubscription =
+            plugin.installStateStreamAndroid.listen(second.add);
+        await pumpEventQueue();
+
+        sink!.success(installState(2));
+        await pumpEventQueue();
+
+        expect(listenCount, 1);
+        expect(first, hasLength(1));
+        expect(second, hasLength(1));
+        await firstSubscription.cancel();
+        await secondSubscription.cancel();
+      });
+
+      test('keeps remaining listeners alive when one cancels', () async {
+        final first = <InstallStateAndroid>[];
+        final second = <InstallStateAndroid>[];
+        final firstSubscription =
+            plugin.installStateStreamAndroid.listen(first.add);
+        final secondSubscription =
+            plugin.installStateStreamAndroid.listen(second.add);
+        await pumpEventQueue();
+
+        await firstSubscription.cancel();
+        await pumpEventQueue();
+        expect(cancelCount, 0);
+
+        sink!.success(installState(11));
+        await pumpEventQueue();
+
+        expect(first, isEmpty);
+        expect(second.single.status, InstallStatusAndroid.downloaded);
+        await secondSubscription.cancel();
+      });
+
+      test('cancels natively once the last listener cancels', () async {
+        final firstSubscription =
+            plugin.installStateStreamAndroid.listen((_) {});
+        final secondSubscription =
+            plugin.installStateStreamAndroid.listen((_) {});
+        await pumpEventQueue();
+
+        await firstSubscription.cancel();
+        await secondSubscription.cancel();
+        await pumpEventQueue();
+
+        expect(listenCount, 1);
+        expect(cancelCount, 1);
+      });
+
+      test('listens natively again after all listeners cancelled', () async {
+        final firstSubscription =
+            plugin.installStateStreamAndroid.listen((_) {});
+        await pumpEventQueue();
+        await firstSubscription.cancel();
+        await pumpEventQueue();
+
+        final events = <InstallStateAndroid>[];
+        final secondSubscription =
+            plugin.installStateStreamAndroid.listen(events.add);
+        await pumpEventQueue();
+
+        sink!.success(installState(2));
+        await pumpEventQueue();
+
+        expect(listenCount, 2);
+        expect(events, hasLength(1));
+        await secondSubscription.cancel();
+      });
+    });
   });
 }
