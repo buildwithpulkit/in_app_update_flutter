@@ -3,6 +3,7 @@
 - **Fixed iOS `showUpdateForIos` always failing with `STORE_NOT_LOADED`.** The App Store ID is now passed to StoreKit as an `NSNumber` (as required by `SKStoreProductParameterITunesItemIdentifier`) instead of a `String`, so the App Store overlay loads correctly.
 - Fixed the App Store overlay failing to present because the view controller was captured (and often `nil`) at plugin registration. It is now resolved at call time via the active window scene.
 - Added distinct error codes for clearer diagnostics: `INVALID_APP_STORE_ID` (non-numeric ID) and `NO_VIEW_CONTROLLER` (nothing available to present from), separate from `STORE_NOT_LOADED`.
+- Added an optional `region` parameter to `checkUpdateIos()` (ISO 3166-1 alpha-2, e.g. `'gb'`) to target a specific App Store region when the device region differs from the storefront the app is published in. Defaults to the device region (`Locale.current`).
 - **BREAKING:** Raised the minimum supported iOS version from 12.0 to 13.0.
 
 ## 2.0.3

@@ -29,14 +29,85 @@ public class InAppUpdateFlutterPlugin: NSObject, FlutterPlugin, SKStoreProductVi
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    if call.method == "showStoreUpdateIos",
-       let args = call.arguments as? [String: Any],
-       let appStoreId = args["appStoreId"] as? String {
+    switch call.method {
+    case "showStoreUpdateIos":
+      guard let args = call.arguments as? [String: Any],
+            let appStoreId = args["appStoreId"] as? String else {
+        result(FlutterError(code: "BAD_ARGS", message: "appStoreId is required", details: nil))
+        return
+      }
       flutterResult = result
       showStoreProductView(appStoreId: appStoreId)
-    } else {
+    case "checkUpdateIos":
+      let regionOverride = (call.arguments as? [String: Any])?["region"] as? String
+      checkUpdate(regionOverride: regionOverride, result: result)
+    default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  private func checkUpdate(regionOverride: String?, result: @escaping FlutterResult) {
+    let bundleId = Bundle.main.bundleIdentifier ?? ""
+    let installedVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+
+    let regionCode = Self.resolveRegion(override: regionOverride)
+    let regionPath = regionCode.isEmpty ? "" : "/\(regionCode)"
+
+    func reply(_ storeVersion: String, _ updateAvailable: Bool) {
+      let payload: [String: Any] = [
+        "storeVersion": storeVersion,
+        "installedVersion": installedVersion,
+        "updateAvailable": updateAvailable,
+        "bundleId": bundleId,
+      ]
+      DispatchQueue.main.async { result(payload) }
+    }
+
+    guard !bundleId.isEmpty,
+          let encodedBundleId = bundleId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+          let url = URL(string: "https://itunes.apple.com\(regionPath)/lookup?bundleId=\(encodedBundleId)") else {
+      reply("", false)
+      return
+    }
+
+    let request = URLRequest(url: url, timeoutInterval: 10)
+    URLSession.shared.dataTask(with: request) { data, _, _ in
+      guard let data = data,
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let results = json["results"] as? [[String: Any]],
+            let storeVersion = results.first?["version"] as? String else {
+        reply("", false)
+        return
+      }
+      // Only report an update when the installed version is known; an empty
+      // installed version is non-comparable and must not be treated as stale.
+      let updateAvailable = !installedVersion.isEmpty &&
+        storeVersion.compare(installedVersion, options: .numeric) == .orderedDescending
+      reply(storeVersion, updateAvailable)
+    }.resume()
+  }
+
+  /// Resolves the ISO 3166-1 alpha-2 region used to scope the iTunes Lookup
+  /// URL, in order of preference:
+  ///
+  ///   1. An explicit `override` supplied by the caller (already alpha-2). Use
+  ///      this when the device region doesn't match the App Store storefront
+  ///      the app is published in (e.g. an expat or QA device).
+  ///   2. The device's language & region setting (`Locale.current`), already in
+  ///      the alpha-2 form the API expects — no conversion table needed.
+  ///
+  /// Without any region the API defaults to the US store, which would miss
+  /// apps not listed there.
+  static func resolveRegion(override: String?) -> String {
+    if let override = override?.trimmingCharacters(in: .whitespacesAndNewlines),
+       !override.isEmpty {
+      return override.lowercased()
+    }
+
+    if #available(iOS 16, *) {
+      return Locale.current.region?.identifier.lowercased() ?? ""
+    }
+    return Locale.current.regionCode?.lowercased() ?? ""
   }
 
   private func showStoreProductView(appStoreId: String) {

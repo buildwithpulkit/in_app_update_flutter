@@ -35,6 +35,19 @@ class InAppUpdateFlutter {
         .showUpdateForIos(appStoreId: appStoreId);
   }
 
+  /// iOS: Checks whether an update is available via the iTunes Lookup API.
+  ///
+  /// Returns an [AppUpdateInfoIos] with the installed version, the latest
+  /// store version, and whether an update is available.
+  ///
+  /// By default the lookup is scoped to the device's region setting
+  /// (`Locale.current`). Pass [region] (an ISO 3166-1 alpha-2 code, e.g. `'us'`,
+  /// `'gb'`) to target a specific App Store region instead — useful when the
+  /// device region differs from the storefront the app is published in.
+  Future<AppUpdateInfoIos> checkUpdateIos({String? region}) {
+    return InAppUpdateFlutterPlatform.instance.checkUpdateIos(region: region);
+  }
+
   /// Android: Checks whether an in-app update is available via Play Core.
   ///
   /// Returns an [AppUpdateInfoAndroid] containing update metadata such as

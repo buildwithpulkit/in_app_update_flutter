@@ -49,6 +49,25 @@ class RunnerTests: XCTestCase {
     waitForExpectations(timeout: 1)
   }
 
+  func testResolveRegionUsesOverride() {
+    // An explicit override wins and is normalized to lowercase.
+    XCTAssertEqual(InAppUpdateFlutterPlugin.resolveRegion(override: "GB"), "gb")
+    XCTAssertEqual(InAppUpdateFlutterPlugin.resolveRegion(override: "  us  "), "us")
+  }
+
+  func testResolveRegionFallsBackToLocaleWhenOverrideBlank() {
+    // A nil/blank override falls through to the device region (Locale.current),
+    // so the result must match the device's own alpha-2 region code.
+    let expected: String
+    if #available(iOS 16, *) {
+      expected = Locale.current.region?.identifier.lowercased() ?? ""
+    } else {
+      expected = Locale.current.regionCode?.lowercased() ?? ""
+    }
+    XCTAssertEqual(InAppUpdateFlutterPlugin.resolveRegion(override: nil), expected)
+    XCTAssertEqual(InAppUpdateFlutterPlugin.resolveRegion(override: "   "), expected)
+  }
+
   func testUnknownMethod() {
     let plugin = InAppUpdateFlutterPlugin()
 
