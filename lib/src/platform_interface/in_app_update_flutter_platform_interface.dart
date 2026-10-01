@@ -29,18 +29,6 @@ abstract class InAppUpdateFlutterPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  /// Shows the platform-specific in-app update UI.
-  ///
-  /// On iOS, this presents the App Store product page using StoreKit.
-  /// [appStoreId] is the numeric App Store ID of your app.
-  @Deprecated(
-    'Use showUpdateForIos() on iOS or checkUpdateAndroid() + '
-    'startImmediateUpdateAndroid()/startFlexibleUpdateAndroid() on Android',
-  )
-  Future<void> showUpdate({required String appStoreId}) {
-    throw UnimplementedError('showUpdate() has not been implemented.');
-  }
-
   /// iOS: Shows the App Store product page overlay via StoreKit.
   ///
   /// [appStoreId] is the numeric App Store ID of your app

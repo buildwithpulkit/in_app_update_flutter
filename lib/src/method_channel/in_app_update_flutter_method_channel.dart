@@ -15,17 +15,6 @@ class MethodChannelInAppUpdateFlutter extends InAppUpdateFlutterPlatform {
   );
 
   @override
-  @Deprecated(
-    'Use showUpdateForIos() on iOS or checkUpdateAndroid() + '
-    'startImmediateUpdateAndroid()/startFlexibleUpdateAndroid() on Android',
-  )
-  Future<void> showUpdate({required String appStoreId}) async {
-    await _methodChannel.invokeMethod('showStoreUpdateIos', {
-      'appStoreId': appStoreId,
-    });
-  }
-
-  @override
   Future<void> showUpdateForIos({required String appStoreId}) async {
     await _methodChannel.invokeMethod('showStoreUpdateIos', {
       'appStoreId': appStoreId,
