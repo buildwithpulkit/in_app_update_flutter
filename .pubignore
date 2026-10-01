@@ -1,4 +1,18 @@
-example/integration_test/plugin_integration_test.dart
-example/test/widget_test.dart
-test/in_app_update_flutter_method_channel_test.dart
-test/in_app_update_flutter_test.dart
+# Tests aren't needed by package consumers.
+/test/
+android/src/test/
+example/test/
+example/integration_test/
+
+# Repo-only files. The README loads screenshots from GitHub, not from the package.
+assets/
+doc/
+example/ios/Podfile.lock
+
+# pub skips the root .gitignore when this file exists, so repeat the rules that
+# matter here.
+build/
+coverage/
+migrate_working_dir/
+*.iml
+*.log

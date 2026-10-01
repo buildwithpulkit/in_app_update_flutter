@@ -50,7 +50,7 @@ On **iOS**, it presents the App Store product page using `SKStoreProductViewCont
 
 ## Why in_app_update_flutter?
 
-This package offers a unified Flutter API for native in-app updates on both Android and iOS. It supports Google Play's official In-App Updates API on Android and StoreKit-powered App Store update flows on iOS, allowing users to update without leaving the app experience.
+This package offers one plugin that supports native in-app updates on both Android and iOS. It uses Google Play's official In-App Updates API on Android and StoreKit-powered App Store update flows on iOS, allowing users to update without leaving the app experience.
 
 ---
 
@@ -63,7 +63,7 @@ This package offers a unified Flutter API for native in-app updates on both Andr
 | Android flexible update (background) | ✅ | ✅ | ❌ |
 | Android install state / progress stream | ✅ | ✅ | ❌ |
 
-This package is designed for developers who want native update experiences on both Android and iOS through a unified Flutter API. If you only need Android's Google Play In-App Updates API, `in_app_update` may be sufficient. If you prefer fully customizable update prompts, `upgrader` may be a better fit.
+This package is designed for developers who want native update experiences on both Android and iOS from a single package. If you only need Android's Google Play In-App Updates API, `in_app_update` may be sufficient. If you prefer fully customizable update prompts, `upgrader` may be a better fit.
 
 ---
 
@@ -73,7 +73,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  in_app_update_flutter: ^3.0.0
+  in_app_update_flutter: ^3.0.1
 ```
 
 Then run:
@@ -126,7 +126,8 @@ final info = await plugin.checkUpdateAndroid();
 if (info.updateAvailability == UpdateAvailabilityAndroid.updateAvailable &&
     info.isImmediateUpdateAllowed) {
   final result = await plugin.startImmediateUpdateAndroid();
-  // result is UpdateResultAndroid.success or UpdateResultAndroid.userCanceled
+  // result is UpdateResultAndroid.success, UpdateResultAndroid.userCanceled,
+  // or UpdateResultAndroid.inAppUpdateFailed
 }
 ```
 
@@ -146,7 +147,7 @@ if (info.updateAvailability == UpdateAvailabilityAndroid.updateAvailable &&
   await plugin.startFlexibleUpdateAndroid();
 
   plugin.installStateStreamAndroid.listen((state) {
-    if (state.installStatus == InstallStatusAndroid.downloaded) {
+    if (state.status == InstallStatusAndroid.downloaded) {
       plugin.completeUpdateAndroid();
     }
   });
@@ -165,6 +166,60 @@ if (info.updateAvailability == UpdateAvailabilityAndroid.updateAvailable &&
 | `isFlexibleUpdateAllowed` | `bool` | Whether flexible update is allowed |
 | `installStatus` | `InstallStatusAndroid` | Current install status |
 
+### InstallStateAndroid fields
+
+Emitted by `installStateStreamAndroid` during a flexible update.
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | `InstallStatusAndroid` | Current install status |
+| `bytesDownloaded` | `int` | Bytes downloaded so far |
+| `totalBytesToDownload` | `int` | Total bytes to download |
+
+---
+
+## Error Handling
+
+When a call fails, it throws a `PlatformException`. Check its `code` to decide what to do:
+
+```dart
+import 'package:flutter/services.dart';
+import 'package:in_app_update_flutter/in_app_update_flutter.dart';
+
+final plugin = InAppUpdateFlutter();
+
+try {
+  await plugin.startImmediateUpdateAndroid();
+} on PlatformException catch (e) {
+  if (e.code == 'UPDATE_NOT_AVAILABLE') {
+    // Nothing to update, or this update type isn't allowed
+  } else {
+    // Handle or log other errors, e.g. e.code, e.message, e.details
+  }
+}
+```
+
+### Android
+
+| Code | Thrown by | Meaning |
+|---|---|---|
+| `NO_ACTIVITY` | All Android methods | The plugin isn't attached to an Activity |
+| `CHECK_UPDATE_FAILED` | `checkUpdateAndroid`, `startImmediateUpdateAndroid`, `startFlexibleUpdateAndroid` | Google Play couldn't return update info |
+| `ALREADY_RUNNING` | `startImmediateUpdateAndroid`, `startFlexibleUpdateAndroid` | Another update flow is still in progress |
+| `UPDATE_NOT_AVAILABLE` | `startImmediateUpdateAndroid`, `startFlexibleUpdateAndroid` | No update is available, or the requested update type isn't allowed |
+| `UPDATE_NOT_STARTED` | `startImmediateUpdateAndroid`, `startFlexibleUpdateAndroid` | Google Play declined to start the update flow |
+| `START_UPDATE_FAILED` | `startImmediateUpdateAndroid`, `startFlexibleUpdateAndroid` | Launching the update flow threw an error; `details` has the message |
+| `COMPLETE_UPDATE_FAILED` | `completeUpdateAndroid` | Google Play couldn't start installing the update (for example, none has finished downloading) |
+
+### iOS
+
+| Code | Thrown by | Meaning |
+|---|---|---|
+| `INVALID_APP_STORE_ID` | `showUpdateForIos` | `appStoreId` isn't numeric |
+| `STORE_ERROR` | `showUpdateForIos` | StoreKit returned an error loading the product; `details` has the message |
+| `STORE_NOT_LOADED` | `showUpdateForIos` | StoreKit couldn't load the product, for example on a simulator |
+| `NO_VIEW_CONTROLLER` | `showUpdateForIos` | There's no view controller to present the App Store sheet from |
+
 ---
 
 ## Example
@@ -182,7 +237,7 @@ flutter run
 
 ### What is in_app_update_flutter?
 
-in_app_update_flutter is a Flutter plugin that provides native in-app updates on both Android and iOS through a single unified API. On Android it uses Google Play's In-App Updates API (immediate and flexible flows); on iOS it presents the App Store product page via StoreKit, so users can update without leaving the app.
+in_app_update_flutter is a Flutter plugin that provides native in-app updates on both Android and iOS. On Android it uses Google Play's In-App Updates API (immediate and flexible flows); on iOS it presents the App Store product page via StoreKit, so users can update without leaving the app.
 
 ### Does in_app_update_flutter support iOS?
 

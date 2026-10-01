@@ -1,3 +1,11 @@
+## 3.0.1
+
+- **Fixed Android install statuses being decoded incorrectly.** `InstallStatusAndroid` now uses Play Core's actual `InstallStatus` values. Previously a failed update was reported as `installing`, a canceled one as `installed`, and real `installing`/`installed` states as `unknown`. This affects both `installStateStreamAndroid` events and `AppUpdateInfoAndroid.installStatus`.
+- **Fixed `startImmediateUpdateAndroid` and `startFlexibleUpdateAndroid` hanging when Google Play doesn't start the update flow.** They now throw a `PlatformException` with code `UPDATE_NOT_STARTED` when Play declines to start the flow, or `START_UPDATE_FAILED` when launching it throws (the message is in `details`). Previously the future never completed, every later start call failed with `ALREADY_RUNNING`, and a launch exception could crash the app.
+- Moved the Android plugin package from `tech.axions.in_app_update_flutter` to `me.pulkitagarwal.in_app_update_flutter`. Flutter's generated plugin registration picks this up automatically; it only affects native Android code or ProGuard/R8 rules that reference `InAppUpdateFlutterPlugin` by its fully qualified name.
+- Moved the repository, homepage and issue tracker to github.com/buildwithpulkit/in_app_update_flutter, and updated the author and license holder to Pulkit Agarwal.
+- README: added an Error Handling section listing every Android and iOS error code and an `InstallStateAndroid` fields table, fixed the flexible update example (`state.installStatus` → `state.status`), and listed `inAppUpdateFailed` as a possible immediate update result.
+
 ## 3.0.0
 
 - **Fixed iOS `showUpdateForIos` always failing with `STORE_NOT_LOADED`.** The App Store ID is now passed to StoreKit as an `NSNumber` (as required by `SKStoreProductParameterITunesItemIdentifier`) instead of a `String`, so the App Store overlay loads correctly.
