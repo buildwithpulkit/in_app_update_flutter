@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'in_app_update_flutter'
-  s.version          = '3.0.0'
+  s.version          = '3.0.1'
   s.summary          = 'In-app updates for iOS (StoreKit) and Android (Play Core).'
   s.description      = <<-DESC
 A Flutter plugin to prompt users for in-app updates using StoreKit on iOS and the Play Core API on Android, supporting both immediate and flexible update flows.
