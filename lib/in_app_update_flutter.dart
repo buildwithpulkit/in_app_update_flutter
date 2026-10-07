@@ -5,7 +5,8 @@ export 'package:in_app_update_flutter/src/models/models.dart';
 
 /// A Flutter plugin for in-app updates.
 ///
-/// On iOS, use [showUpdateForIos] to present the App Store product page
+/// On iOS, use [checkUpdateIos] to check whether a newer version is on the
+/// App Store, and [showUpdateForIos] to present the App Store product page
 /// using StoreKit.
 ///
 /// On Android, use [checkUpdateAndroid] to check for updates via Google Play's
@@ -19,6 +20,23 @@ class InAppUpdateFlutter {
   Future<void> showUpdateForIos({required String appStoreId}) {
     return InAppUpdateFlutterPlatform.instance
         .showUpdateForIos(appStoreId: appStoreId);
+  }
+
+  /// iOS: Checks whether a newer version is available on the App Store.
+  ///
+  /// The app is looked up by its bundle identifier in the storefront of the
+  /// user's App Store account (falling back to the device region). Returns an
+  /// [AppUpdateInfoIos] with the store version, the installed version, and
+  /// whether the store version is newer.
+  ///
+  /// Throws a [PlatformException] with one of these codes:
+  /// - `NO_BUNDLE_ID`: the app has no bundle identifier.
+  /// - `NO_INSTALLED_VERSION`: the app has no `CFBundleShortVersionString`.
+  /// - `CHECK_UPDATE_FAILED`: the App Store lookup request failed.
+  /// - `APP_NOT_FOUND`: the app was not found in that App Store storefront.
+  /// - `VERSION_PARSE_FAILED`: a version is not period-separated integers.
+  Future<AppUpdateInfoIos> checkUpdateIos() {
+    return InAppUpdateFlutterPlatform.instance.checkUpdateIos();
   }
 
   /// Android: Checks whether an in-app update is available via Play Core.

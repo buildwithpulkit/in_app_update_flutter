@@ -29,7 +29,9 @@ public class InAppUpdateFlutterPlugin: NSObject, FlutterPlugin, SKStoreProductVi
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    if call.method == "showStoreUpdateIos",
+    if call.method == "checkForUpdateIos" {
+      checkForUpdate(result: result)
+    } else if call.method == "showStoreUpdateIos",
        let args = call.arguments as? [String: Any],
        let appStoreId = args["appStoreId"] as? String {
       flutterResult = result
@@ -37,6 +39,93 @@ public class InAppUpdateFlutterPlugin: NSObject, FlutterPlugin, SKStoreProductVi
     } else {
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  /// Looks the app up on the App Store by bundle identifier and compares the
+  /// store version with the installed one. `result` is captured per call rather
+  /// than stored in `flutterResult`, so concurrent checks don't overwrite each
+  /// other.
+  private func checkForUpdate(result: @escaping FlutterResult) {
+    guard let bundleId = Bundle.main.bundleIdentifier else {
+      result(FlutterError(code: "NO_BUNDLE_ID", message: "The app has no bundle identifier", details: nil))
+      return
+    }
+
+    guard let installedVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else {
+      result(FlutterError(code: "NO_INSTALLED_VERSION", message: "The app has no CFBundleShortVersionString", details: nil))
+      return
+    }
+
+    var components = URLComponents(string: "https://itunes.apple.com/lookup")!
+    components.queryItems = [URLQueryItem(name: "bundleId", value: bundleId)]
+    if let country = lookupCountryCode() {
+      components.queryItems?.append(URLQueryItem(name: "country", value: country))
+    }
+
+    var request = URLRequest(url: components.url!)
+    request.cachePolicy = .reloadIgnoringLocalCacheData
+
+    URLSession.shared.dataTask(with: request) { data, response, error in
+      let outcome = Self.checkUpdateOutcome(
+        data: data,
+        response: response,
+        error: error,
+        installedVersion: installedVersion
+      )
+      DispatchQueue.main.async {
+        result(outcome)
+      }
+    }.resume()
+  }
+
+  /// The country for the lookup: the user's App Store storefront, then the
+  /// device region, then nil (the lookup's default store).
+  private func lookupCountryCode() -> String? {
+    if let storefront = SKPaymentQueue.default().storefront?.countryCode,
+       let alpha2 = AppStoreVersion.alpha2CountryCode(fromAlpha3: storefront) {
+      return alpha2.lowercased()
+    }
+    return Locale.current.regionCode?.lowercased()
+  }
+
+  /// Turns the lookup response into either the result map or a FlutterError.
+  private static func checkUpdateOutcome(
+    data: Data?,
+    response: URLResponse?,
+    error: Error?,
+    installedVersion: String
+  ) -> Any {
+    if let error = error {
+      return FlutterError(code: "CHECK_UPDATE_FAILED", message: "Failed to check for updates", details: error.localizedDescription)
+    }
+
+    if let httpResponse = response as? HTTPURLResponse, !(200..<300).contains(httpResponse.statusCode) {
+      return FlutterError(code: "CHECK_UPDATE_FAILED", message: "Failed to check for updates", details: "HTTP \(httpResponse.statusCode)")
+    }
+
+    guard let data = data,
+          let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let results = json["results"] as? [[String: Any]] else {
+      return FlutterError(code: "CHECK_UPDATE_FAILED", message: "Failed to check for updates", details: "Invalid lookup response")
+    }
+
+    guard let storeVersion = results.first?["version"] as? String else {
+      return FlutterError(code: "APP_NOT_FOUND", message: "The app was not found on the App Store", details: nil)
+    }
+
+    guard let isUpdateAvailable = AppStoreVersion.isNewer(storeVersion: storeVersion, than: installedVersion) else {
+      return FlutterError(
+        code: "VERSION_PARSE_FAILED",
+        message: "Versions must be period-separated integers",
+        details: "store: \(storeVersion), installed: \(installedVersion)"
+      )
+    }
+
+    return [
+      "isUpdateAvailable": isUpdateAvailable,
+      "storeVersion": storeVersion,
+      "installedVersion": installedVersion,
+    ]
   }
 
   private func showStoreProductView(appStoreId: String) {

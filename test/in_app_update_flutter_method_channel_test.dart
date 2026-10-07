@@ -61,6 +61,48 @@ void main() {
       });
     });
 
+    group('checkUpdateIos', () {
+      test(
+          'calls checkForUpdateIos without arguments and deserializes response',
+          () async {
+        MethodCall? invokedCall;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(methodChannel, (call) async {
+          invokedCall = call;
+          return {
+            'isUpdateAvailable': true,
+            'storeVersion': '1.3.0',
+            'installedVersion': '1.2.0',
+          };
+        });
+
+        final info = await plugin.checkUpdateIos();
+        expect(invokedCall?.method, 'checkForUpdateIos');
+        expect(invokedCall?.arguments, isNull);
+        expect(info.isUpdateAvailable, true);
+        expect(info.storeVersion, '1.3.0');
+        expect(info.installedVersion, '1.2.0');
+      });
+
+      test('propagates platform errors', () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(methodChannel, (call) async {
+          throw PlatformException(
+            code: 'APP_NOT_FOUND',
+            message: 'The app was not found on the App Store',
+          );
+        });
+
+        expect(
+          () => plugin.checkUpdateIos(),
+          throwsA(
+            isA<PlatformException>()
+                .having((e) => e.code, 'code', 'APP_NOT_FOUND'),
+          ),
+        );
+      });
+    });
+
     group('checkUpdateAndroid', () {
       test('calls checkForUpdateAndroid and deserializes response', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

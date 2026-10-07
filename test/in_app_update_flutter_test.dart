@@ -14,6 +14,15 @@ class _MockPlatform extends InAppUpdateFlutterPlatform {
   }
 
   @override
+  Future<AppUpdateInfoIos> checkUpdateIos() async {
+    return const AppUpdateInfoIos(
+      isUpdateAvailable: true,
+      storeVersion: '1.3.0',
+      installedVersion: '1.2.0',
+    );
+  }
+
+  @override
   Future<AppUpdateInfoAndroid> checkUpdateAndroid() async {
     return const AppUpdateInfoAndroid(
       updateAvailability: UpdateAvailabilityAndroid.updateAvailable,
@@ -95,6 +104,13 @@ void main() {
         );
       });
 
+      test('checkUpdateIos throws UnimplementedError', () {
+        expect(
+          () => platform.checkUpdateIos(),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+
       test('checkUpdateAndroid throws UnimplementedError', () {
         expect(
           () => platform.checkUpdateAndroid(),
@@ -139,6 +155,16 @@ void main() {
         await InAppUpdateFlutterPlatform.instance
             .showUpdateForIos(appStoreId: '544007664');
         expect(mock.lastAppStoreId, '544007664');
+      });
+
+      test('checkUpdateIos returns expected info', () async {
+        final mock = _MockPlatform();
+        InAppUpdateFlutterPlatform.instance = mock;
+
+        final info = await InAppUpdateFlutterPlatform.instance.checkUpdateIos();
+        expect(info.isUpdateAvailable, true);
+        expect(info.storeVersion, '1.3.0');
+        expect(info.installedVersion, '1.2.0');
       });
 
       test('checkUpdateAndroid returns expected info', () async {

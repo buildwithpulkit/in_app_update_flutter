@@ -22,36 +22,74 @@ class MyApp extends StatelessWidget {
 // iOS Example
 // =============================================================================
 
-/// iOS: Shows the App Store product page overlay via StoreKit.
+/// iOS: Checks the App Store for a newer version, then shows the App Store
+/// product page overlay via StoreKit.
 ///
-/// On iOS there is no "check for update" API — you simply present the
-/// App Store page and let the user decide.
-class IosUpdateExample extends StatelessWidget {
+/// 1. **Check** — Call [checkUpdateIos] to compare the App Store version with
+///    the installed version. The app is looked up by its bundle identifier, so
+///    this example's bundle ID must exist on the App Store for it to succeed.
+/// 2. **Show** — Call [showUpdateForIos] to present the App Store page.
+class IosUpdateExample extends StatefulWidget {
   const IosUpdateExample({super.key});
+
+  @override
+  State<IosUpdateExample> createState() => _IosUpdateExampleState();
+}
+
+class _IosUpdateExampleState extends State<IosUpdateExample> {
+  final _plugin = InAppUpdateFlutter();
+  String _status = 'Press "Check for Update" to start.';
+
+  Future<void> _checkForUpdate() async {
+    setState(() => _status = 'Checking for update...');
+    try {
+      final info = await _plugin.checkUpdateIos();
+      setState(() {
+        _status = info.isUpdateAvailable
+            ? 'Update available: ${info.storeVersion} '
+                '(installed ${info.installedVersion}).'
+            : 'Up to date (${info.installedVersion}).';
+      });
+    } catch (e) {
+      setState(() => _status = 'Check failed: $e');
+    }
+  }
+
+  Future<void> _showStoreUpdate() async {
+    try {
+      // Public App Store ID used only for this demo (YouTube).
+      // Replace with your own app's numeric App Store ID in a real
+      // integration.
+      await _plugin.showUpdateForIos(appStoreId: '544007664');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('In-App Update (iOS)')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            try {
-              // Public App Store ID used only for this demo (YouTube).
-              // Replace with your own app's numeric App Store ID in a real
-              // integration.
-              await InAppUpdateFlutter()
-                  .showUpdateForIos(appStoreId: '544007664');
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: $e')),
-                );
-              }
-            }
-          },
-          child: const Text('Show App Store Update'),
-        ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(_status, style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: 16),
+          _StepButton(
+            step: 1,
+            label: 'Check for Update',
+            onPressed: _checkForUpdate,
+          ),
+          _StepButton(
+            step: 2,
+            label: 'Show App Store Update',
+            onPressed: _showStoreUpdate,
+          ),
+        ],
       ),
     );
   }
