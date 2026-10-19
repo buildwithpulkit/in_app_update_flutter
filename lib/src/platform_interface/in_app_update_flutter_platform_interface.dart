@@ -37,6 +37,14 @@ abstract class InAppUpdateFlutterPlatform extends PlatformInterface {
     throw UnimplementedError('showUpdateForIos() has not been implemented.');
   }
 
+  /// iOS: Checks whether a newer version is on the App Store.
+  ///
+  /// Returns an [AppUpdateInfoIos] with the availability, installed and store
+  /// versions, App Store ID, store URL, country, and minimum iOS version.
+  Future<AppUpdateInfoIos> checkUpdateIos() {
+    throw UnimplementedError('checkUpdateIos() has not been implemented.');
+  }
+
   /// Android: Checks whether an in-app update is available via Play Core.
   ///
   /// Returns an [AppUpdateInfoAndroid] containing update metadata such as
