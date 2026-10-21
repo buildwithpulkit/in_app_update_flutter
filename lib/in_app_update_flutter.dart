@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:in_app_update_flutter/src/models/models.dart';
 import 'package:in_app_update_flutter/src/platform_interface/in_app_update_flutter_platform_interface.dart';
 
@@ -5,8 +6,9 @@ export 'package:in_app_update_flutter/src/models/models.dart';
 
 /// A Flutter plugin for in-app updates.
 ///
-/// On iOS, use [showUpdateForIos] to present the App Store product page
-/// using StoreKit.
+/// On iOS, use [checkUpdateIos] to compare the installed version with the
+/// App Store version, then [showUpdateForIos] to present the App Store
+/// product page using StoreKit.
 ///
 /// On Android, use [checkUpdateAndroid] to check for updates via Google Play's
 /// In-App Updates API, then [startImmediateUpdateAndroid] or
@@ -19,6 +21,21 @@ class InAppUpdateFlutter {
   Future<void> showUpdateForIos({required String appStoreId}) {
     return InAppUpdateFlutterPlatform.instance
         .showUpdateForIos(appStoreId: appStoreId);
+  }
+
+  /// iOS: Checks whether a newer version of this app is on the App Store.
+  ///
+  /// Looks up this app's bundle ID in the device's App Store storefront via
+  /// Apple's iTunes Lookup endpoint and compares the store version with the
+  /// installed one. Returns an [AppUpdateInfoIos]; pass its
+  /// [AppUpdateInfoIos.appStoreId] to [showUpdateForIos].
+  ///
+  /// Throws an [UnsupportedError] when not running on iOS.
+  Future<AppUpdateInfoIos> checkUpdateIos() {
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      throw UnsupportedError('checkUpdateIos() is only supported on iOS.');
+    }
+    return InAppUpdateFlutterPlatform.instance.checkUpdateIos();
   }
 
   /// Android: Checks whether an in-app update is available via Play Core.

@@ -86,13 +86,67 @@ flutter pub get
 
 ## iOS Usage
 
-Pass your numeric App Store ID to `showUpdateForIos`. The ID can be found in your App Store Connect URL or the app's public App Store link.
+The typical flow is:
+
+1. Call `checkUpdateIos()` to compare the installed version with the App Store version.
+2. If an update is available, pass `info.appStoreId` to `showUpdateForIos` to present the App Store page.
 
 ```dart
 import 'package:in_app_update_flutter/in_app_update_flutter.dart';
 
+final plugin = InAppUpdateFlutter();
+
+final info = await plugin.checkUpdateIos();
+switch (info.updateAvailability) {
+  case UpdateAvailabilityIos.updateAvailable:
+    await plugin.showUpdateForIos(appStoreId: info.appStoreId);
+  case UpdateAvailabilityIos.updateIncompatible:
+    // A newer version exists but this device's iOS is below minimumOsVersion.
+  case UpdateAvailabilityIos.updateNotAvailable:
+  case UpdateAvailabilityIos.installedNewer:
+    break;
+}
+```
+
+`checkUpdateIos()` takes no arguments. It reads your app's bundle ID and the device's App Store storefront, looks the app up with Apple's iTunes Lookup endpoint, and compares the versions numerically (`2.1` equals `2.1.0`).
+
+You can also call `showUpdateForIos` directly with your numeric App Store ID. The ID can be found in your App Store Connect URL or the app's public App Store link.
+
+```dart
 await InAppUpdateFlutter().showUpdateForIos(appStoreId: '1234567890');
 ```
+
+### AppUpdateInfoIos fields
+
+| Field | Type | Description |
+|---|---|---|
+| `updateAvailability` | `UpdateAvailabilityIos` | Whether an update is available |
+| `installedVersion` | `String` | Installed version (`CFBundleShortVersionString`) |
+| `storeVersion` | `String` | Version currently on the App Store |
+| `appStoreId` | `String` | Numeric App Store ID (Apple's `trackId`), ready for `showUpdateForIos` |
+| `storeUrl` | `String` | App Store product page URL (Apple's `trackViewUrl`), exactly as returned |
+| `country` | `String` | Lowercase alpha-2 storefront country used for the lookup, for example `"in"` |
+| `minimumOsVersion` | `String?` | Minimum iOS version the store version requires, or `null` if Apple's value is missing or invalid |
+
+### UpdateAvailabilityIos values
+
+| Value | Meaning |
+|---|---|
+| `updateAvailable` | The store version is newer and this device's iOS meets `minimumOsVersion` |
+| `updateNotAvailable` | The installed version equals the store version |
+| `installedNewer` | The installed version is newer than the store version (for example a TestFlight or Xcode build) |
+| `updateIncompatible` | The store version is newer, but this device's iOS is below `minimumOsVersion` |
+
+### Limitations
+
+- The lookup is unofficial: Apple doesn't document the `bundleId` parameter of the iTunes Lookup endpoint.
+- Results can be up to about 14 hours stale because Apple's CDN caches lookup responses.
+- Dev and flavor bundle IDs that aren't on the App Store get `APP_NOT_FOUND`.
+- TestFlight and Xcode builds may report `installedNewer`.
+
+### Privacy
+
+`checkUpdateIos()` calls `itunes.apple.com` with your app's bundle ID and the storefront country. The plugin keeps nothing.
 
 **How to find your App Store ID:**
 
@@ -219,6 +273,15 @@ try {
 | `STORE_ERROR` | `showUpdateForIos` | StoreKit returned an error loading the product; `details` has the message |
 | `STORE_NOT_LOADED` | `showUpdateForIos` | StoreKit couldn't load the product, for example on a simulator |
 | `NO_VIEW_CONTROLLER` | `showUpdateForIos` | There's no view controller to present the App Store sheet from |
+| `MISSING_BUNDLE_ID` | `checkUpdateIos` | The app's bundle identifier is `nil` |
+| `STOREFRONT_UNAVAILABLE` | `checkUpdateIos` | The App Store storefront country is unavailable, empty or unrecognized |
+| `NETWORK_ERROR` | `checkUpdateIos` | The device is offline, the request timed out, or another network error occurred; `details` has the message |
+| `HTTP_ERROR` | `checkUpdateIos` | Apple returned a status other than 200; `details` has the status code |
+| `INVALID_RESPONSE` | `checkUpdateIos` | The response isn't valid lookup JSON, for example a captive-portal page |
+| `APP_NOT_FOUND` | `checkUpdateIos` | No App Store app matches this bundle ID in this storefront; `details` has the bundle ID and country |
+| `INVALID_VERSION` | `checkUpdateIos` | The installed or store version isn't numeric, or `minimumOsVersion` is invalid when an update exists; `details` has the raw values |
+
+`checkUpdateIos` throws an `UnsupportedError` (not a `PlatformException`) when called on a platform other than iOS.
 
 ---
 
@@ -249,7 +312,7 @@ Yes — in_app_update_flutter supports Android through Google Play's In-App Upda
 
 ### Does in_app_update_flutter support forced updates on iOS?
 
-No — forced and immediate updates are Android-only. On iOS the plugin simply opens the App Store product page; it does not check versions or block the app. Use Android's immediate update flow if you need to require an update.
+Not natively — iOS has no system flow that blocks the app until it's updated, so the plugin can't block it for you. It can tell you an update exists: call `checkUpdateIos()`, and if it returns `updateAvailable`, show your own blocking UI that sends the user to `showUpdateForIos`. On Android, use the immediate update flow.
 
 ### What's the difference between immediate and flexible updates on Android?
 

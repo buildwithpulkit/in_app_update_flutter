@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:in_app_update_flutter/in_app_update_flutter.dart';
 import 'package:in_app_update_flutter/src/method_channel/in_app_update_flutter_method_channel.dart';
 import 'package:in_app_update_flutter/src/platform_interface/in_app_update_flutter_platform_interface.dart';
@@ -11,6 +12,19 @@ class _MockPlatform extends InAppUpdateFlutterPlatform {
   @override
   Future<void> showUpdateForIos({required String appStoreId}) async {
     lastAppStoreId = appStoreId;
+  }
+
+  @override
+  Future<AppUpdateInfoIos> checkUpdateIos() async {
+    return const AppUpdateInfoIos(
+      updateAvailability: UpdateAvailabilityIos.updateAvailable,
+      installedVersion: '2.1.0',
+      storeVersion: '2.2.0',
+      appStoreId: '544007664',
+      storeUrl: 'https://apps.apple.com/in/app/id544007664',
+      country: 'in',
+      minimumOsVersion: '15.0',
+    );
   }
 
   @override
@@ -95,6 +109,13 @@ void main() {
         );
       });
 
+      test('checkUpdateIos throws UnimplementedError', () {
+        expect(
+          () => platform.checkUpdateIos(),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+
       test('checkUpdateAndroid throws UnimplementedError', () {
         expect(
           () => platform.checkUpdateAndroid(),
@@ -141,6 +162,16 @@ void main() {
         expect(mock.lastAppStoreId, '544007664');
       });
 
+      test('checkUpdateIos returns expected info', () async {
+        final mock = _MockPlatform();
+        InAppUpdateFlutterPlatform.instance = mock;
+
+        final info = await InAppUpdateFlutterPlatform.instance.checkUpdateIos();
+        expect(info.updateAvailability, UpdateAvailabilityIos.updateAvailable);
+        expect(info.appStoreId, '544007664');
+        expect(info.country, 'in');
+      });
+
       test('checkUpdateAndroid returns expected info', () async {
         final mock = _MockPlatform();
         InAppUpdateFlutterPlatform.instance = mock;
@@ -172,6 +203,29 @@ void main() {
             .startFlexibleUpdateAndroid();
         expect(result, UpdateResultAndroid.success);
       });
+    });
+  });
+
+  group('InAppUpdateFlutter.checkUpdateIos', () {
+    tearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      InAppUpdateFlutterPlatform.instance = MethodChannelInAppUpdateFlutter();
+    });
+
+    test('throws UnsupportedError when not on iOS', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      expect(
+        () => InAppUpdateFlutter().checkUpdateIos(),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+
+    test('delegates to the platform on iOS', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      InAppUpdateFlutterPlatform.instance = _MockPlatform();
+
+      final info = await InAppUpdateFlutter().checkUpdateIos();
+      expect(info.appStoreId, '544007664');
     });
   });
 }

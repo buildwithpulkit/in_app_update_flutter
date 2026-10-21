@@ -24,8 +24,9 @@ class MyApp extends StatelessWidget {
 
 /// iOS: Shows the App Store product page overlay via StoreKit.
 ///
-/// On iOS there is no "check for update" API — you simply present the
-/// App Store page and let the user decide.
+/// To check for an update first, call `checkUpdateIos()` and pass its
+/// `appStoreId` to `showUpdateForIos`. This demo uses a fixed public App
+/// Store ID, so it presents the App Store page directly.
 class IosUpdateExample extends StatelessWidget {
   const IosUpdateExample({super.key});
 

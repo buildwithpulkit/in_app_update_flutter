@@ -61,6 +61,86 @@ void main() {
       });
     });
 
+    group('checkUpdateIos', () {
+      test('calls checkForUpdateIos and deserializes response', () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(methodChannel, (call) async {
+          expect(call.method, 'checkForUpdateIos');
+          expect(call.arguments, isNull);
+          return {
+            'updateAvailability': 'updateIncompatible',
+            'installedVersion': '2.1',
+            'storeVersion': '2.2.0',
+            'appStoreId': '544007664',
+            'storeUrl': 'https://apps.apple.com/in/app/id544007664?uo=4',
+            'country': 'in',
+            'minimumOsVersion': '17.0',
+          };
+        });
+
+        final info = await plugin.checkUpdateIos();
+        expect(
+          info.updateAvailability,
+          UpdateAvailabilityIos.updateIncompatible,
+        );
+        expect(info.installedVersion, '2.1');
+        expect(info.storeVersion, '2.2.0');
+        expect(info.appStoreId, '544007664');
+        expect(
+          info.storeUrl,
+          'https://apps.apple.com/in/app/id544007664?uo=4',
+        );
+        expect(info.country, 'in');
+        expect(info.minimumOsVersion, '17.0');
+      });
+
+      test('handles null minimumOsVersion', () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(methodChannel, (call) async {
+          return {
+            'updateAvailability': 'updateNotAvailable',
+            'installedVersion': '2.2.0',
+            'storeVersion': '2.2.0',
+            'appStoreId': '544007664',
+            'storeUrl': 'https://apps.apple.com/in/app/id544007664',
+            'country': 'in',
+            'minimumOsVersion': null,
+          };
+        });
+
+        final info = await plugin.checkUpdateIos();
+        expect(
+          info.updateAvailability,
+          UpdateAvailabilityIos.updateNotAvailable,
+        );
+        expect(info.minimumOsVersion, isNull);
+      });
+
+      for (final code in [
+        'MISSING_BUNDLE_ID',
+        'STOREFRONT_UNAVAILABLE',
+        'NETWORK_ERROR',
+        'HTTP_ERROR',
+        'INVALID_RESPONSE',
+        'APP_NOT_FOUND',
+        'INVALID_VERSION',
+      ]) {
+        test('propagates $code', () async {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(methodChannel, (call) async {
+            throw PlatformException(code: code);
+          });
+
+          expect(
+            () => plugin.checkUpdateIos(),
+            throwsA(
+              isA<PlatformException>().having((e) => e.code, 'code', code),
+            ),
+          );
+        });
+      }
+    });
+
     group('checkUpdateAndroid', () {
       test('calls checkForUpdateAndroid and deserializes response', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
