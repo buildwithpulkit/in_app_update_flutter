@@ -36,6 +36,7 @@ On **iOS**, it presents the App Store product page using `SKStoreProductViewCont
 ## Features
 
 ### iOS
+- Check whether a newer version is on the App Store before showing any prompt
 - Prompts users to update directly inside the app using the native App Store sheet — no browser redirect, no app switch
 - Pure Swift with zero native setup — no AppDelegate changes needed
 - Works with both CocoaPods and Swift Package Manager out of the box
@@ -59,6 +60,7 @@ This package offers one plugin that supports native in-app updates on both Andro
 | Feature | in_app_update_flutter | in_app_update | upgrader |
 |---|---|---|---|
 | iOS in-app update prompt (no redirect) | ✅ | ❌ | ❌ |
+| iOS App Store version check | ✅ | ❌ | ✅ |
 | Android immediate update (blocking) | ✅ | ✅ | ❌ |
 | Android flexible update (background) | ✅ | ✅ | ❌ |
 | Android install state / progress stream | ✅ | ✅ | ❌ |
@@ -73,7 +75,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  in_app_update_flutter: ^3.0.1
+  in_app_update_flutter: ^4.0.0
 ```
 
 Then run:

@@ -1,3 +1,9 @@
+## 4.0.0
+
+- **Added `checkUpdateIos()`** to check whether a newer version of your app is on the App Store. It looks the app up by bundle ID in the device's App Store storefront, compares versions numerically, and returns an `AppUpdateInfoIos` with an `UpdateAvailabilityIos` value (`updateAvailable`, `updateNotAvailable`, `installedNewer` or `updateIncompatible`) plus the App Store ID ready for `showUpdateForIos`. Failures throw a `PlatformException` with code `MISSING_BUNDLE_ID`, `STOREFRONT_UNAVAILABLE`, `NETWORK_ERROR`, `HTTP_ERROR`, `INVALID_RESPONSE`, `APP_NOT_FOUND` or `INVALID_VERSION`. Calling it on a platform other than iOS throws `UnsupportedError`.
+- **BREAKING:** Removed `showUpdate()`, deprecated since 2.0.0. Use `showUpdateForIos()` on iOS, and `checkUpdateAndroid()` with `startImmediateUpdateAndroid()` or `startFlexibleUpdateAndroid()` on Android.
+- README: documented `checkUpdateIos()`, its fields, error codes, limitations and privacy, and added it to the features list and comparison table.
+
 ## 3.0.1
 
 - **Fixed Android install statuses being decoded incorrectly.** `InstallStatusAndroid` now uses Play Core's actual `InstallStatus` values. Previously a failed update was reported as `installing`, a canceled one as `installed`, and real `installing`/`installed` states as `unknown`. This affects both `installStateStreamAndroid` events and `AppUpdateInfoAndroid.installStatus`.
