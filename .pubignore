@@ -8,6 +8,7 @@ example/integration_test/
 assets/
 doc/
 example/ios/Podfile.lock
+/CLAUDE.md
 
 # pub skips the root .gitignore when this file exists, so repeat the rules that
 # matter here.
