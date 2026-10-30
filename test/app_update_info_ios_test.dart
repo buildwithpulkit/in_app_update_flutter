@@ -33,14 +33,14 @@ void main() {
 
   group('AppUpdateInfoIos.fromMap', () {
     Map<String, dynamic> map(String availability, {String? minimumOs}) => {
-          'updateAvailability': availability,
-          'installedVersion': '2.1.0',
-          'storeVersion': '2.2',
-          'appStoreId': '544007664',
-          'storeUrl': 'https://apps.apple.com/in/app/id544007664',
-          'country': 'in',
-          'minimumOsVersion': minimumOs,
-        };
+      'updateAvailability': availability,
+      'installedVersion': '2.1.0',
+      'storeVersion': '2.2',
+      'appStoreId': '544007664',
+      'storeUrl': 'https://apps.apple.com/in/app/id544007664',
+      'country': 'in',
+      'minimumOsVersion': minimumOs,
+    };
 
     test('decodes every field', () {
       final info = AppUpdateInfoIos.fromMap(

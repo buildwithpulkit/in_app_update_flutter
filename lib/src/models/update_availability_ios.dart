@@ -28,10 +28,10 @@ enum UpdateAvailabilityIos {
       'installedNewer' => UpdateAvailabilityIos.installedNewer,
       'updateIncompatible' => UpdateAvailabilityIos.updateIncompatible,
       _ => throw ArgumentError.value(
-          value,
-          'value',
-          'Unknown UpdateAvailabilityIos value',
-        ),
+        value,
+        'value',
+        'Unknown UpdateAvailabilityIos value',
+      ),
     };
   }
 }
