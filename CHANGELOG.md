@@ -1,3 +1,9 @@
+## 4.1.0
+
+- **Migrated the Android plugin to built-in Kotlin (AGP 9).** The plugin no longer applies the `kotlin-android` Gradle plugin, so it builds on Android Gradle Plugin 9 with `android.builtInKotlin=true` (the default) as well as with built-in Kotlin turned off. The plugin's build now uses AGP 9.1.0 and Kotlin 2.4.0.
+- **Raised the minimum supported versions to Flutter 3.44 and Dart 3.12.**
+- Updated the example app to AGP 9.1.0, Gradle 9.3.1 and Kotlin 2.4.0.
+
 ## 4.0.0
 
 - **Added `checkUpdateIos()`** to check whether a newer version of your app is on the App Store. It looks the app up by bundle ID in the device's App Store storefront, compares versions numerically, and returns an `AppUpdateInfoIos` with an `UpdateAvailabilityIos` value (`updateAvailable`, `updateNotAvailable`, `installedNewer` or `updateIncompatible`) plus the App Store ID ready for `showUpdateForIos`. Failures throw a `PlatformException` with code `MISSING_BUNDLE_ID`, `STOREFRONT_UNAVAILABLE`, `NETWORK_ERROR`, `HTTP_ERROR`, `INVALID_RESPONSE`, `APP_NOT_FOUND` or `INVALID_VERSION`. Calling it on a platform other than iOS throws `UnsupportedError`.
