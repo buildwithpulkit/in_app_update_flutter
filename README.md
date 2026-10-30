@@ -75,7 +75,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  in_app_update_flutter: ^4.0.0
+  in_app_update_flutter: ^4.1.0
 ```
 
 Then run:
