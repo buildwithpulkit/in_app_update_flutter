@@ -157,8 +157,9 @@ void main() {
         final mock = _MockPlatform();
         InAppUpdateFlutterPlatform.instance = mock;
 
-        await InAppUpdateFlutterPlatform.instance
-            .showUpdateForIos(appStoreId: '544007664');
+        await InAppUpdateFlutterPlatform.instance.showUpdateForIos(
+          appStoreId: '544007664',
+        );
         expect(mock.lastAppStoreId, '544007664');
       });
 
@@ -176,8 +177,8 @@ void main() {
         final mock = _MockPlatform();
         InAppUpdateFlutterPlatform.instance = mock;
 
-        final info =
-            await InAppUpdateFlutterPlatform.instance.checkUpdateAndroid();
+        final info = await InAppUpdateFlutterPlatform.instance
+            .checkUpdateAndroid();
         expect(
           info.updateAvailability,
           UpdateAvailabilityAndroid.updateAvailable,

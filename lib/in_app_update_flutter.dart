@@ -19,8 +19,9 @@ class InAppUpdateFlutter {
   /// [appStoreId] is the numeric App Store ID of your app
   /// (found in your App Store Connect URL).
   Future<void> showUpdateForIos({required String appStoreId}) {
-    return InAppUpdateFlutterPlatform.instance
-        .showUpdateForIos(appStoreId: appStoreId);
+    return InAppUpdateFlutterPlatform.instance.showUpdateForIos(
+      appStoreId: appStoreId,
+    );
   }
 
   /// iOS: Checks whether a newer version of this app is on the App Store.
